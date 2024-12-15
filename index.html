@@ -19,30 +19,26 @@
             color: #e2e8f0;
         }
         .centered-flex {
-            position: relative;
             display: flex;
             justify-content: center;
             align-items: flex-start;
             gap: 2rem;
         }
         .output-container {
-            position: absolute;
-            top: 0;
+            flex: 1;
             white-space: pre;
-            overflow-x: auto;
+            overflow: hidden;
+            background-color: #1a202c;
+            padding: 16px;
+            border-radius: 8px;
         }
-        #original-output-container {
-            left: 50%;
-            transform: translateX(-100%);
-            width: auto;
+        .output-container h2 {
+            margin-bottom: 1rem;
         }
-        #updated-output-container {
-            left: 50%;
-            transform: translateX(0);
-            width: auto;
-        }
-        pre {
+        .output-container pre {
             white-space: pre; /* Preserve formatting */
+            display: block;
+            min-height: 100px;
         }
     </style>
 </head>
@@ -69,14 +65,14 @@
         </div>
 
         <div class="centered-flex">
-            <div id="original-output-container" class="output-container bg-gray-900 p-4 rounded-lg shadow-lg">
-                <h2 class="text-xl font-semibold mb-4">Original File Output</h2>
-                <pre id="original-output" class="bg-gray-800 p-4 rounded-lg text-sm font-mono"></pre>
+            <div id="original-output-container" class="output-container">
+                <h2 class="text-xl font-semibold">Original File Output</h2>
+                <pre id="original-output" class="text-sm font-mono"></pre>
             </div>
 
-            <div id="updated-output-container" class="output-container bg-gray-900 p-4 rounded-lg shadow-lg">
-                <h2 class="text-xl font-semibold mb-4">Updated File Output</h2>
-                <pre id="updated-output" class="bg-gray-800 p-4 rounded-lg text-sm font-mono"></pre>
+            <div id="updated-output-container" class="output-container">
+                <h2 class="text-xl font-semibold">Updated File Output</h2>
+                <pre id="updated-output" class="text-sm font-mono"></pre>
             </div>
         </div>
 
