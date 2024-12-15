@@ -20,17 +20,18 @@
         }
         .centered-flex {
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: flex-start;
             gap: 2rem;
         }
         .output-container {
             flex: 1;
             white-space: pre;
-            overflow: hidden;
             background-color: #1a202c;
             padding: 16px;
             border-radius: 8px;
+            min-width: 45%;
+            max-width: 100%;
         }
         .output-container h2 {
             margin-bottom: 1rem;
@@ -38,11 +39,9 @@
         .output-container pre {
             white-space: pre; /* Preserve formatting */
             display: block;
-            min-height: 100px;
-            background-color: #1a202c;
-            color: #e2e8f0;
-            padding: 16px;
-            border-radius: 8px;
+            min-height: 300px;
+            font-size: 1rem;
+            overflow: visible;
         }
     </style>
 </head>
