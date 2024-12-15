@@ -39,6 +39,10 @@
             white-space: pre; /* Preserve formatting */
             display: block;
             min-height: 100px;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
         }
     </style>
 </head>
@@ -67,12 +71,12 @@
         <div class="centered-flex">
             <div id="original-output-container" class="output-container">
                 <h2 class="text-xl font-semibold">Original File Output</h2>
-                <pre id="original-output" class="text-sm font-mono"></pre>
+                <pre id="original-output" class="text-sm font-mono"><code></code></pre>
             </div>
 
             <div id="updated-output-container" class="output-container">
                 <h2 class="text-xl font-semibold">Updated File Output</h2>
-                <pre id="updated-output" class="text-sm font-mono"></pre>
+                <pre id="updated-output" class="text-sm font-mono"><code></code></pre>
             </div>
         </div>
 
@@ -120,16 +124,9 @@
             return diffResult;
         }
 
-        function renderOutput(elementId, lines, type = null) {
-            const container = document.getElementById(elementId);
-            container.innerHTML = '';
-
-            lines.forEach(line => {
-                const div = document.createElement('div');
-                div.textContent = line;
-                div.className = type ? `p-1 diff-line-${type}` : 'p-1';
-                container.appendChild(div);
-            });
+        function renderOutput(elementId, lines) {
+            const container = document.getElementById(elementId).querySelector('code');
+            container.textContent = lines.join('\n');
         }
 
         function renderDiff(diffResult) {
