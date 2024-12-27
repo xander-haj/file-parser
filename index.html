@@ -1,180 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Diff Parser</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            background-color: #1a202c;
-            color: #e2e8f0;
-        }
-        .diff-line-added {
-            background-color: #2f855a;
-            color: #e2e8f0;
-        }
-        .diff-line-removed {
-            background-color: #c53030;
-            color: #e2e8f0;
-        }
-        .centered-flex {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 2rem;
-        }
-        .output-container {
-            flex: 1;
-            white-space: pre;
-            background-color: #1a202c;
-            padding: 16px;
-            border-radius: 8px;
-            min-width: 45%;
-            max-width: 125%;
-        }
-        #original-output-container {
-            margin-right: auto;
-        }
-        #updated-output-container {
-            margin-left: auto;
-        }
-        .output-container h2 {
-            margin-bottom: 1rem;
-        }
-        .output-container pre {
-            white-space: pre; /* Preserve formatting */
-            display: block;
-            min-height: 300px;
-            font-size: 1rem;
-            overflow: visible;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>File Compare – Section/Function Based</title>
+  <style>
+    /*============================
+      Global Dark Theme & Layout
+    =============================*/
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e1e;
+      color: #cccccc;
+      font-family: Arial, sans-serif;
+    }
+    h1, label {
+      color: #ffffff;
+      font-weight: normal;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 1rem;
+    }
+
+    /*============================
+      File Inputs & Button
+    =============================*/
+    .file-inputs {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .file-inputs input[type="file"] {
+      background: #333333;
+      color: #ccc;
+      border: 1px solid #444;
+      padding: 0.4rem;
+      cursor: pointer;
+    }
+    .file-inputs button {
+      background-color: #007acc;
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      cursor: pointer;
+      font-size: 1rem;
+      border-radius: 4px;
+    }
+    .file-inputs button:hover {
+      background-color: #005f99;
+    }
+
+    /*============================
+      Compare Results Section
+    =============================*/
+    .compare-results {
+      display: flex;
+      gap: 1rem;
+    }
+    .file-preview {
+      flex: 1;
+      background-color: #2d2d2d;
+      border: 1px solid #444;
+      min-height: 400px;
+      padding: 1rem;
+      overflow: visible; /* ensure no scrollbars unless lines are super long */
+      white-space: pre;  /* preserve spacing and do NOT wrap lines */
+      font-family: Consolas, monospace;
+      font-size: 0.9rem;
+      color: #eee;
+    }
+
+    /*============================
+      Diff Highlighting
+    =============================*/
+    .deleted {
+      background-color: #6c1a1a; /* dark red */
+      color: #ff9191;           /* lighter red text */
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+    .added {
+      background-color: #1e3b1e; /* dark green */
+      color: #b4f0b4;           /* light green text */
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+    .missing {
+      background-color: #5e4b1a; /* dark orange */
+      color: #ffdd99;           /* light orange text */
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+    .unchanged {
+      background-color: inherit;
+      color: inherit;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+    .changed {
+      background-color: #28235a; /* dark purple to indicate changed block */
+      color: #d6bfff;
+      margin-bottom: 1rem;
+      padding: 0.5rem;
+    }
+
+    /* Mark the detected function signature within each block */
+    .section-signature {
+      font-weight: bold;
+      text-decoration: underline;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+  </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4">
-    <header class="text-center mb-6">
-        <h1 class="text-3xl font-bold">File Diff Parser</h1>
-        <p class="text-lg text-gray-400">Compare files to visualize changes (additions and deletions).</p>
-    </header>
+<body>
 
-    <main class="w-full max-w-6xl space-y-6">
-        <div class="bg-gray-800 p-4 rounded-lg shadow-lg">
-            <h2 class="text-xl font-semibold mb-4">Upload Files</h2>
-            <div class="flex flex-col sm:flex-row gap-4">
-                <div class="flex-1">
-                    <label class="block text-sm text-gray-400 mb-1" for="file1">Original File:</label>
-                    <input id="file1" type="file" class="block w-full text-gray-400 bg-gray-900 border border-gray-700 rounded-md p-2" />
-                </div>
-                <div class="flex-1">
-                    <label class="block text-sm text-gray-400 mb-1" for="file2">Updated File:</label>
-                    <input id="file2" type="file" class="block w-full text-gray-400 bg-gray-900 border border-gray-700 rounded-md p-2" />
-                </div>
-            </div>
-            <button id="compare-btn" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded shadow w-full sm:w-auto">Compare Files</button>
-        </div>
+  <div class="container">
+    <h1>Compare Two Files by Functions/Sections</h1>
+    
+    <div class="file-inputs">
+      <div>
+        <label for="file1">File 1:</label>
+        <input type="file" id="file1" />
+      </div>
+      <div>
+        <label for="file2">File 2:</label>
+        <input type="file" id="file2" />
+      </div>
+      <button id="compareBtn">Compare</button>
+    </div>
 
-        <div class="centered-flex">
-            <div id="original-output-container" class="output-container">
-                <h2 class="text-xl font-semibold">Original File Output</h2>
-                <pre id="original-output" class="text-sm font-mono"><code></code></pre>
-            </div>
+    <div class="compare-results">
+      <div id="file1Preview" class="file-preview"></div>
+      <div id="file2Preview" class="file-preview"></div>
+    </div>
+  </div>
 
-            <div id="updated-output-container" class="output-container">
-                <h2 class="text-xl font-semibold">Updated File Output</h2>
-                <pre id="updated-output" class="text-sm font-mono"><code></code></pre>
-            </div>
-        </div>
+  <script>
+    // DOM elements
+    const file1Input = document.getElementById('file1');
+    const file2Input = document.getElementById('file2');
+    const compareBtn = document.getElementById('compareBtn');
+    const file1Preview = document.getElementById('file1Preview');
+    const file2Preview = document.getElementById('file2Preview');
 
-        <div class="bg-gray-900 p-4 rounded-lg shadow-lg">
-            <h2 class="text-xl font-semibold mb-4">Diff Output</h2>
-            <pre id="diff-container" class="bg-gray-800 p-4 rounded-lg text-sm font-mono"></pre>
-        </div>
-    </main>
+    // Compare event
+    compareBtn.addEventListener('click', async () => {
+      if (!file1Input.files.length || !file2Input.files.length) {
+        alert('Please select both files before comparing!');
+        return;
+      }
 
-    <footer class="mt-8 text-center text-gray-500 text-sm">
-        <p>&copy; 2024 File Diff Parser. Hosted on GitHub Pages.</p>
-    </footer>
+      try {
+        const [text1, text2] = await Promise.all([
+          readFileAsText(file1Input.files[0]),
+          readFileAsText(file2Input.files[0])
+        ]);
 
-    <script>
-        function readFile(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(reader.error);
-                reader.readAsText(file);
-            });
-        }
+        const sections1 = parseCodeSections(text1);
+        const sections2 = parseCodeSections(text2);
 
-        function diffFiles(original, updated) {
-            const originalLines = original.split('\n');
-            const updatedLines = updated.split('\n');
-            const diffResult = [];
+        compareAndDisplaySections(sections1, sections2);
+      } catch (err) {
+        console.error('Error reading files:', err);
+        alert('Failed to read files.');
+      }
+    });
 
-            let i = 0, j = 0;
+    // Read a file as text
+    function readFileAsText(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = e => reject(e);
+        reader.readAsText(file);
+      });
+    }
 
-            while (i < originalLines.length || j < updatedLines.length) {
-                if (i < originalLines.length && j < updatedLines.length && originalLines[i] === updatedLines[j]) {
-                    diffResult.push({ type: 'unchanged', text: originalLines[i] });
-                    i++;
-                    j++;
-                } else if (j < updatedLines.length && (i >= originalLines.length || originalLines[i] !== updatedLines[j])) {
-                    diffResult.push({ type: 'added', text: updatedLines[j] });
-                    j++;
-                } else if (i < originalLines.length && (j >= updatedLines.length || originalLines[i] !== updatedLines[j])) {
-                    diffResult.push({ type: 'removed', text: originalLines[i] });
-                    i++;
-                }
-            }
+    // Parse code into "sections" based on naive regex for function signatures
+    // or method definitions. Each section has { signature, content }.
+    function parseCodeSections(code) {
+      const lines = code.split('\n');
+      const sections = [];
+      let currentSig = '';
+      let currentLines = [];
 
-            return diffResult;
-        }
+      // Very naive broad regex for function/method signatures in common languages
+      const functionRegex = new RegExp(
+        '(function\\s+\\w+\\s*\\(.*?\\)|' +               // JavaScript e.g. function myFunc(...)
+        '\\bdef\\s+\\w+\\s*\\(.*?\\)|' +                 // Python e.g. def my_func(...)
+        '\\b(public|private|protected)\\s+\\w+\\s+\\w+\\s*\\(.*?\\)|' + // Java e.g. public void doStuff(...)
+        '\\b\\w+\\s+\\w+\\s*\\(.*?\\)' +                 // C/C++ e.g. int main(...)
+        ')',
+        'i'
+      );
 
-        function renderOutput(elementId, lines) {
-            const container = document.getElementById(elementId).querySelector('code');
-            container.textContent = lines.join('\n');
-        }
-
-        function renderDiff(diffResult) {
-            const diffContainer = document.getElementById('diff-container');
-            diffContainer.innerHTML = '';
-
-            diffResult.forEach(diff => {
-                const line = document.createElement('div');
-                line.textContent = diff.text;
-
-                if (diff.type === 'added') {
-                    line.className = 'diff-line-added p-1';
-                } else if (diff.type === 'removed') {
-                    line.className = 'diff-line-removed p-1';
-                } else {
-                    line.className = 'p-1';
-                }
-
-                diffContainer.appendChild(line);
-            });
-        }
-
-        document.getElementById('compare-btn').addEventListener('click', async () => {
-            const file1 = document.getElementById('file1').files[0];
-            const file2 = document.getElementById('file2').files[0];
-
-            if (!file1 || !file2) {
-                alert('Please upload both files to compare.');
-                return;
-            }
-
-            try {
-                const [original, updated] = await Promise.all([readFile(file1), readFile(file2)]);
-
-                renderOutput('original-output', original.split('\n'));
-                renderOutput('updated-output', updated.split('\n'));
-
-                const diffResult = diffFiles(original, updated);
-                renderDiff(diffResult);
-            } catch (error) {
-                alert('Error reading files: ' + error.message);
-            }
+      // Helper to push the current block into sections
+      function pushSection(signature, linesArr) {
+        const blockContent = linesArr.join('\n');
+        sections.push({
+          signature: signature || '(no signature)',
+          content: blockContent
         });
-    </script>
+      }
+
+      // Traverse each line, searching for function signatures
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (functionRegex.test(line.trim())) {
+          // If we're in the middle of a section, push it
+          if (currentLines.length > 0 || currentSig) {
+            pushSection(currentSig, currentLines);
+          }
+          // Start a new section
+          currentSig = line.trim();
+          currentLines = [line];
+        } else {
+          // Continue current section
+          currentLines.push(line);
+        }
+      }
+      // If there's leftover content at the end
+      if (currentLines.length > 0 || currentSig) {
+        pushSection(currentSig, currentLines);
+      }
+
+      // If we found no function signatures at all, treat the entire file as a single section
+      if (sections.length === 0 && lines.length > 0) {
+        sections.push({
+          signature: '(entire file)',
+          content: code
+        });
+      }
+
+      return sections;
+    }
+
+    // Compare two arrays of sections, attempting to find identical or similar sections
+    function compareAndDisplaySections(sections1, sections2) {
+      // Clear previous
+      file1Preview.innerHTML = '';
+      file2Preview.innerHTML = '';
+
+      // We'll track matched sections in file2 so we know what's left as "added"
+      const matchedInFile2 = new Set();
+
+      // 1. For each section in file1, see if there's an EXACT match in file2
+      sections1.forEach((s1, idx1) => {
+        let foundExact = false;
+        let foundSimilarIndex = -1;
+        for (let idx2 = 0; idx2 < sections2.length; idx2++) {
+          if (matchedInFile2.has(idx2)) continue; // already matched to something
+
+          const s2 = sections2[idx2];
+          // EXACT match
+          if (s1.signature === s2.signature && s1.content === s2.content) {
+            foundExact = true;
+            matchedInFile2.add(idx2);
+
+            // Render as "unchanged"
+            renderSection(file1Preview, s1, 'unchanged');
+            renderSection(file2Preview, s2, 'unchanged');
+            break;
+          }
+          // If not exact, see if there's a "similar" signature
+          if (!foundExact && s1.signature === s2.signature) {
+            foundSimilarIndex = idx2;
+          }
+        }
+        // If not exact, but we found a similar signature => changed
+        if (!foundExact && foundSimilarIndex >= 0) {
+          matchedInFile2.add(foundSimilarIndex);
+          const s2 = sections2[foundSimilarIndex];
+          // Render s1 + s2 as changed
+          renderSection(file1Preview, s1, 'changed');
+          renderSection(file2Preview, s2, 'changed');
+        }
+        // If no match at all => it's missing in file2
+        if (!foundExact && foundSimilarIndex === -1) {
+          renderSection(file1Preview, s1, 'deleted'); // or 'missing'
+          renderSection(file2Preview, { signature: '', content: '' }, 'unchanged');
+        }
+      });
+
+      // 2. Any sections left in file2 that are unmatched => "added"
+      sections2.forEach((s2, idx2) => {
+        if (!matchedInFile2.has(idx2)) {
+          renderSection(file1Preview, { signature: '', content: '' }, 'unchanged');
+          renderSection(file2Preview, s2, 'added');
+        }
+      });
+    }
+
+    // Render a single section (signature + content) in the given container with the given CSS class
+    function renderSection(container, section, diffClass) {
+      const block = document.createElement('div');
+      block.classList.add(diffClass);
+
+      // Signature line
+      const sig = document.createElement('span');
+      sig.classList.add('section-signature');
+      sig.textContent = section.signature || '(no signature)';
+      block.appendChild(sig);
+
+      // Content block
+      // We'll preserve spacing as is, since container uses white-space: pre
+      const contentBlock = document.createElement('div');
+      contentBlock.textContent = section.content || '';
+      block.appendChild(contentBlock);
+
+      container.appendChild(block);
+    }
+  </script>
 </body>
 </html>
