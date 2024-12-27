@@ -13,9 +13,10 @@
       background-color: #1e1e1e;
       color: #cccccc;
       font-family: Arial, sans-serif;
-      height: 100%;
-      width: 100%;
-      overflow: hidden; /* so we can let code expand outward if it gets super wide */
+
+      /* Allow normal vertical scrolling */
+      overflow-x: hidden; /* no horizontal scroll, but keep vertical scroll */
+      overflow-y: auto;
     }
     h1, label {
       color: #ffffff;
@@ -61,21 +62,18 @@
      * Main Compare Section Layout
      *********************************/
     .compare-container {
-      /* This fills the rest of the screen below the header */
-      position: absolute;
-      top: 120px; /* header area height (~120px). Adjust as needed. */
-      left: 0;
-      right: 0;
-      bottom: 0;
+      /* Normal "flow" block, so the page extends vertically as needed. */
       display: flex;
       flex-direction: row;
-      /* We'll make a "center line" at 50% width */
+      width: 100%;
+      /* You can set min-height if you want a certain starting height, e.g. 600px */
+      min-height: 600px;
+      /* border-top: 2px solid #444;  (Optional) If you want a line below the header */
     }
 
     /* Each half is 50% wide, anchored at the center line */
     .half {
       width: 50%;
-      height: 100%;
       position: relative;
       overflow: visible; /* let code expand outside if needed */
     }
@@ -87,14 +85,16 @@
       justify-content: flex-end; /* push the preview to the far right */
       align-items: flex-start;   /* top alignment */
       border-right: 2px solid #444; /* vertical dividing line */
+      padding-right: 1rem;      /* small gap from dividing line to code */
     }
 
     /* RIGHT side: anchor the preview DIV to the LEFT edge
        so that if it’s wide, it expands to the RIGHT. */
     .right-half {
       display: flex;
-      justify-content: flex-start; 
+      justify-content: flex-start;
       align-items: flex-start;
+      padding-left: 1rem;       /* small gap from dividing line to code */
     }
 
     /*********************************
@@ -330,7 +330,7 @@
           // If not exact, check same signature => changed
           if (!foundExact && s1.signature === s2.signature) {
             foundSimilar = idx2;
-            // don't break yet, we might still find an exact match further down
+            // don't break yet, we might still find an exact match further
           }
         }
 
