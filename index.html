@@ -14,9 +14,10 @@
       color: #cccccc;
       font-family: Arial, sans-serif;
 
-      /* Allow normal vertical scrolling */
-      overflow-x: hidden; /* no horizontal scroll, but keep vertical scroll */
-      overflow-y: auto;
+      /* Enable BOTH horizontal and vertical scrolling */
+      overflow: auto; 
+      width: 100%;
+      min-height: 100vh; /* ensure body can grow as needed */
     }
     h1, label {
       color: #ffffff;
@@ -62,56 +63,59 @@
      * Main Compare Section Layout
      *********************************/
     .compare-container {
-      /* Normal "flow" block, so the page extends vertically as needed. */
-      display: flex;
+      display: flex;         /* two columns side by side */
       flex-direction: row;
       width: 100%;
-      /* You can set min-height if you want a certain starting height, e.g. 600px */
-      min-height: 600px;
-      /* border-top: 2px solid #444;  (Optional) If you want a line below the header */
+      min-height: 600px;     /* or any preferred minimum height */
+      box-sizing: border-box;
     }
 
-    /* Each half is 50% wide, anchored at the center line */
+    /* Each half is 50% wide */
     .half {
       width: 50%;
-      position: relative;
-      overflow: visible; /* let code expand outside if needed */
+      position: relative;  
+      overflow: visible; /* we let content expand outward if needed */
     }
 
-    /* LEFT side: anchor the preview DIV to the RIGHT edge
-       so that if it’s wide, it expands to the LEFT. */
+    /* LEFT side: anchor code to the RIGHT edge so it expands left if wide. */
     .left-half {
       display: flex;
-      justify-content: flex-end; /* push the preview to the far right */
-      align-items: flex-start;   /* top alignment */
-      border-right: 2px solid #444; /* vertical dividing line */
-      padding-right: 1rem;      /* small gap from dividing line to code */
+      justify-content: flex-end; /* code sits at the right boundary */
+      align-items: flex-start;
+      border-right: 2px solid #444; /* vertical divider */
+      padding-right: 1rem;
+      box-sizing: border-box;
     }
 
-    /* RIGHT side: anchor the preview DIV to the LEFT edge
-       so that if it’s wide, it expands to the RIGHT. */
+    /* RIGHT side: anchor code to the LEFT edge so it expands right if wide. */
     .right-half {
       display: flex;
       justify-content: flex-start;
       align-items: flex-start;
-      padding-left: 1rem;       /* small gap from dividing line to code */
+      padding-left: 1rem;
+      box-sizing: border-box;
     }
 
     /*********************************
      * The Code Preview Boxes
      *********************************/
     .file-preview {
+      /* 
+        'inline-block' + 'width: max-content' ensures the element
+        grows to fit its content. The browser then sees that 
+        the content might exceed the screen width, enabling horizontal scroll.
+      */
+      display: inline-block;
+      width: max-content;
       background-color: #2d2d2d;
       border: 1px solid #444;
       padding: 1rem;
-      /* Important: inline-block so it’s only as wide as its contents.
-         That way if the code is super wide, it can overflow outward. */
-      display: inline-block;
-      white-space: pre; /* preserve spacing and do NOT wrap lines */
+      margin: 0;
+      white-space: pre;  /* preserve spacing and do NOT wrap lines */
       font-family: Consolas, monospace;
       font-size: 0.9rem;
       color: #eee;
-      margin: 0; /* no extra margins */
+      vertical-align: top; /* ensure the block sits at the top line */
     }
 
     /*********************************
