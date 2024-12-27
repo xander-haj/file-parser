@@ -4,34 +4,38 @@
   <meta charset="UTF-8" />
   <title>File Compare – Section/Function Based</title>
   <style>
-    /*============================
-      Global Dark Theme & Layout
-    =============================*/
+    /*********************************
+     * Global Dark Theme & Typography
+     *********************************/
     html, body {
       margin: 0;
       padding: 0;
       background-color: #1e1e1e;
       color: #cccccc;
       font-family: Arial, sans-serif;
+      height: 100%;
+      width: 100%;
+      overflow: hidden; /* so we can let code expand outward if it gets super wide */
     }
     h1, label {
       color: #ffffff;
       font-weight: normal;
-    }
-    .container {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 1rem;
+      margin: 0;
+      padding: 0;
     }
 
-    /*============================
-      File Inputs & Button
-    =============================*/
+    /*********************************
+     * Header and File Input Controls
+     *********************************/
+    .header {
+      text-align: center;
+      padding: 1rem;
+    }
     .file-inputs {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 1rem;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
     }
     .file-inputs input[type="file"] {
       background: #333333;
@@ -53,29 +57,66 @@
       background-color: #005f99;
     }
 
-    /*============================
-      Compare Results Section
-    =============================*/
-    .compare-results {
+    /*********************************
+     * Main Compare Section Layout
+     *********************************/
+    .compare-container {
+      /* This fills the rest of the screen below the header */
+      position: absolute;
+      top: 120px; /* header area height (~120px). Adjust as needed. */
+      left: 0;
+      right: 0;
+      bottom: 0;
       display: flex;
-      gap: 1rem;
+      flex-direction: row;
+      /* We'll make a "center line" at 50% width */
     }
+
+    /* Each half is 50% wide, anchored at the center line */
+    .half {
+      width: 50%;
+      height: 100%;
+      position: relative;
+      overflow: visible; /* let code expand outside if needed */
+    }
+
+    /* LEFT side: anchor the preview DIV to the RIGHT edge
+       so that if it’s wide, it expands to the LEFT. */
+    .left-half {
+      display: flex;
+      justify-content: flex-end; /* push the preview to the far right */
+      align-items: flex-start;   /* top alignment */
+      border-right: 2px solid #444; /* vertical dividing line */
+    }
+
+    /* RIGHT side: anchor the preview DIV to the LEFT edge
+       so that if it’s wide, it expands to the RIGHT. */
+    .right-half {
+      display: flex;
+      justify-content: flex-start; 
+      align-items: flex-start;
+    }
+
+    /*********************************
+     * The Code Preview Boxes
+     *********************************/
     .file-preview {
-      flex: 1;
       background-color: #2d2d2d;
       border: 1px solid #444;
-      min-height: 400px;
       padding: 1rem;
-      overflow: visible; /* ensure no scrollbars unless lines are super long */
-      white-space: pre;  /* preserve spacing and do NOT wrap lines */
+      /* Important: inline-block so it’s only as wide as its contents.
+         That way if the code is super wide, it can overflow outward. */
+      display: inline-block;
+      white-space: pre; /* preserve spacing and do NOT wrap lines */
       font-family: Consolas, monospace;
       font-size: 0.9rem;
       color: #eee;
+      margin: 0; /* no extra margins */
     }
 
-    /*============================
-      Diff Highlighting
-    =============================*/
+    /*********************************
+     * Diff Highlighting
+     *********************************/
     .deleted {
       background-color: #6c1a1a; /* dark red */
       color: #ff9191;           /* lighter red text */
@@ -118,9 +159,9 @@
 </head>
 <body>
 
-  <div class="container">
+  <!-- Header with Title + File inputs -->
+  <div class="header">
     <h1>Compare Two Files by Functions/Sections</h1>
-    
     <div class="file-inputs">
       <div>
         <label for="file1">File 1:</label>
@@ -132,22 +173,27 @@
       </div>
       <button id="compareBtn">Compare</button>
     </div>
+  </div>
 
-    <div class="compare-results">
+  <!-- Split container: left for File 1, right for File 2 -->
+  <div class="compare-container">
+    <div class="half left-half">
       <div id="file1Preview" class="file-preview"></div>
+    </div>
+    <div class="half right-half">
       <div id="file2Preview" class="file-preview"></div>
     </div>
   </div>
 
   <script>
-    // DOM elements
+    // Grab DOM references
     const file1Input = document.getElementById('file1');
     const file2Input = document.getElementById('file2');
     const compareBtn = document.getElementById('compareBtn');
     const file1Preview = document.getElementById('file1Preview');
     const file2Preview = document.getElementById('file2Preview');
 
-    // Compare event
+    // Compare
     compareBtn.addEventListener('click', async () => {
       if (!file1Input.files.length || !file2Input.files.length) {
         alert('Please select both files before comparing!');
@@ -160,9 +206,11 @@
           readFileAsText(file2Input.files[0])
         ]);
 
+        // Break each file’s text into “sections” or “functions”
         const sections1 = parseCodeSections(text1);
         const sections2 = parseCodeSections(text2);
 
+        // Compare them
         compareAndDisplaySections(sections1, sections2);
       } catch (err) {
         console.error('Error reading files:', err);
@@ -170,66 +218,74 @@
       }
     });
 
-    // Read a file as text
+    // Read file as text in the browser
     function readFileAsText(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = e => reject(e);
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = (e) => reject(e);
         reader.readAsText(file);
       });
     }
 
-    // Parse code into "sections" based on naive regex for function signatures
-    // or method definitions. Each section has { signature, content }.
+    /**
+     * Parse the file text into code "sections" by looking for naive function signatures in:
+     * JS (function foo(...)), Python (def foo(...)), Java (public void foo(...)), C/C++ (int main(...)), etc.
+     * If no signatures are found, treat the entire file as one block: (entire file).
+     */
     function parseCodeSections(code) {
       const lines = code.split('\n');
       const sections = [];
       let currentSig = '';
       let currentLines = [];
 
-      // Very naive broad regex for function/method signatures in common languages
+      // Very naive broad regex
       const functionRegex = new RegExp(
-        '(function\\s+\\w+\\s*\\(.*?\\)|' +               // JavaScript e.g. function myFunc(...)
-        '\\bdef\\s+\\w+\\s*\\(.*?\\)|' +                 // Python e.g. def my_func(...)
-        '\\b(public|private|protected)\\s+\\w+\\s+\\w+\\s*\\(.*?\\)|' + // Java e.g. public void doStuff(...)
-        '\\b\\w+\\s+\\w+\\s*\\(.*?\\)' +                 // C/C++ e.g. int main(...)
+        '(' +
+          'function\\s+\\w+\\s*\\(.*?\\)|' +    // JS
+          '\\bdef\\s+\\w+\\s*\\(.*?\\)|' +      // Python
+          '\\b(public|private|protected)\\s+\\w+\\s+\\w+\\s*\\(.*?\\)|' + // Java
+          '\\b\\w+\\s+\\w+\\s*\\(.*?\\)' +      // C/C++
         ')',
         'i'
       );
 
-      // Helper to push the current block into sections
-      function pushSection(signature, linesArr) {
+      // Helper to finalize a block
+      function pushSection(sig, linesArr) {
         const blockContent = linesArr.join('\n');
         sections.push({
-          signature: signature || '(no signature)',
+          signature: sig || '(no signature)',
           content: blockContent
         });
       }
 
-      // Traverse each line, searching for function signatures
+      // Walk through lines
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
+        // If we detect a new function signature
         if (functionRegex.test(line.trim())) {
-          // If we're in the middle of a section, push it
+          // Push whatever was accumulated
           if (currentLines.length > 0 || currentSig) {
             pushSection(currentSig, currentLines);
           }
-          // Start a new section
           currentSig = line.trim();
           currentLines = [line];
         } else {
-          // Continue current section
+          // Keep accumulating lines in the current section
           currentLines.push(line);
         }
       }
-      // If there's leftover content at the end
+
+      // End of file: push last block
       if (currentLines.length > 0 || currentSig) {
         pushSection(currentSig, currentLines);
       }
 
-      // If we found no function signatures at all, treat the entire file as a single section
-      if (sections.length === 0 && lines.length > 0) {
+      // If no recognized signatures, treat entire file as "(entire file)"
+      const foundAnySignature = sections.some(s => s.signature && s.signature !== '(no signature)');
+      if (!foundAnySignature && lines.length > 0) {
+        // Overwrite everything with a single block
+        sections.length = 0;
         sections.push({
           signature: '(entire file)',
           content: code
@@ -239,75 +295,86 @@
       return sections;
     }
 
-    // Compare two arrays of sections, attempting to find identical or similar sections
+    /**
+     * Compare the two arrays of sections (sections1, sections2).
+     * We'll do a naive approach:
+     *  1) If exact match (signature + content) => 'unchanged'
+     *  2) If same signature but different content => 'changed'
+     *  3) If no match => 'deleted' in file1, 'added' in file2
+     */
     function compareAndDisplaySections(sections1, sections2) {
-      // Clear previous
+      // Clear old results
       file1Preview.innerHTML = '';
       file2Preview.innerHTML = '';
 
-      // We'll track matched sections in file2 so we know what's left as "added"
       const matchedInFile2 = new Set();
 
-      // 1. For each section in file1, see if there's an EXACT match in file2
-      sections1.forEach((s1, idx1) => {
+      // For each section in file1, see if there's an exact match or a same-signature match in file2
+      sections1.forEach(s1 => {
         let foundExact = false;
-        let foundSimilarIndex = -1;
+        let foundSimilar = -1;
+
         for (let idx2 = 0; idx2 < sections2.length; idx2++) {
-          if (matchedInFile2.has(idx2)) continue; // already matched to something
+          if (matchedInFile2.has(idx2)) continue; // already matched
 
           const s2 = sections2[idx2];
+
           // EXACT match
           if (s1.signature === s2.signature && s1.content === s2.content) {
             foundExact = true;
             matchedInFile2.add(idx2);
-
-            // Render as "unchanged"
             renderSection(file1Preview, s1, 'unchanged');
             renderSection(file2Preview, s2, 'unchanged');
             break;
           }
-          // If not exact, see if there's a "similar" signature
+          // If not exact, check same signature => changed
           if (!foundExact && s1.signature === s2.signature) {
-            foundSimilarIndex = idx2;
+            foundSimilar = idx2;
+            // don't break yet, we might still find an exact match further down
           }
         }
-        // If not exact, but we found a similar signature => changed
-        if (!foundExact && foundSimilarIndex >= 0) {
-          matchedInFile2.add(foundSimilarIndex);
-          const s2 = sections2[foundSimilarIndex];
-          // Render s1 + s2 as changed
+
+        // If we didn't get an exact match but did find a same-signature => changed
+        if (!foundExact && foundSimilar >= 0) {
+          matchedInFile2.add(foundSimilar);
+          const s2 = sections2[foundSimilar];
           renderSection(file1Preview, s1, 'changed');
           renderSection(file2Preview, s2, 'changed');
         }
-        // If no match at all => it's missing in file2
-        if (!foundExact && foundSimilarIndex === -1) {
-          renderSection(file1Preview, s1, 'deleted'); // or 'missing'
+
+        // If no match at all => 'deleted'
+        if (!foundExact && foundSimilar === -1) {
+          renderSection(file1Preview, s1, 'deleted');
+          // render an empty block in file2 for alignment
           renderSection(file2Preview, { signature: '', content: '' }, 'unchanged');
         }
       });
 
-      // 2. Any sections left in file2 that are unmatched => "added"
+      // Anything left in file2 => 'added'
       sections2.forEach((s2, idx2) => {
         if (!matchedInFile2.has(idx2)) {
+          // empty block in file1 side
           renderSection(file1Preview, { signature: '', content: '' }, 'unchanged');
           renderSection(file2Preview, s2, 'added');
         }
       });
     }
 
-    // Render a single section (signature + content) in the given container with the given CSS class
+    /**
+     * Render a single code section in the specified container (file1Preview or file2Preview)
+     * using the specified diffClass. 
+     */
     function renderSection(container, section, diffClass) {
       const block = document.createElement('div');
       block.classList.add(diffClass);
 
-      // Signature line
+      // Bold/underline signature
       const sig = document.createElement('span');
       sig.classList.add('section-signature');
-      sig.textContent = section.signature || '(no signature)';
+      sig.textContent = section.signature?.trim() ? section.signature : '(no signature)';
       block.appendChild(sig);
 
-      // Content block
-      // We'll preserve spacing as is, since container uses white-space: pre
+      // The code content
       const contentBlock = document.createElement('div');
       contentBlock.textContent = section.content || '';
       block.appendChild(contentBlock);
